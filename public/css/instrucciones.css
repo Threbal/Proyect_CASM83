@@ -1,0 +1,13 @@
+/* Instrucciones CSS */
+    :root{--bg:#f7faff;--bd:#dfe9ff;--ok:#1a73e8}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;line-height:1.55;background:#fff}
+    .wrap{max-width:900px;margin:0 auto;padding:24px}
+    .card{background:var(--bg);border:1px solid var(--bd);border-radius:16px;padding:20px}
+    h1{margin:0 0 10px 0}
+    h2{margin:18px 0 8px 0;font-size:1.15rem}
+    ul{margin:6px 0 12px 20px}
+    .consent{margin-top:12px;padding:14px;background:#fff;border:1px solid #eee;border-radius:12px}
+    .actions{margin-top:14px;display:flex;gap:10px;align-items:center}
+    button{padding:10px 16px;border-radius:10px;border:1px solid #ccc;cursor:not-allowed;background:#eee}
+    button.enabled{cursor:pointer;background:var(--ok);color:#fff;border-color:var(--ok)}
+    .muted{color:#666;font-size:.95rem}

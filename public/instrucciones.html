@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>CASM83 — Instrucciones y Consentimiento</title>
+  <link rel="stylesheet" href="/css/instrucciones.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{--bg:#f7faff;--bd:#dfe9ff;--ok:#1a73e8}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;line-height:1.55;background:#fff}
+    .wrap{max-width:900px;margin:0 auto;padding:24px}
+    .card{background:var(--bg);border:1px solid var(--bd);border-radius:16px;padding:20px}
+    h1{margin:0 0 10px 0}
+    h2{margin:18px 0 8px 0;font-size:1.15rem}
+    ul{margin:6px 0 12px 20px}
+    .consent{margin-top:12px;padding:14px;background:#fff;border:1px solid #eee;border-radius:12px}
+    .actions{margin-top:14px;display:flex;gap:10px;align-items:center}
+    button{padding:10px 16px;border-radius:10px;border:1px solid #ccc;cursor:not-allowed;background:#eee}
+    button.enabled{cursor:pointer;background:var(--ok);color:#fff;border-color:var(--ok)}
+    .muted{color:#666;font-size:.95rem}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>CASM83 — Instrucciones</h1>
+      <p class="muted"> <mark> previa obligatoria antes de acceder al test. </mark></p>
+
+      <h2>Objetivo</h2>
+      <p>Este cuestionario tiene fines de investigación académica para **recopilar datos** y analizar preferencias vocacionales. No entrega un diagnóstico final ni sustituye una evaluación psicológica profesional.</p>
+
+      <h2>Cómo responder</h2>
+      <ul>
+        <li>Verás <strong>143 ítems</strong>. Cada uno presenta dos enunciados (A y B).</li>
+        <li>Para cada ítem elige una de las <strong>cuatro opciones</strong>:
+          <ul>
+            <li><strong>Ninguno </strong></li>
+            <li><strong>A </strong></li>
+            <li><strong>B </strong></li>
+            <li><strong>Ambos </strong></li>
+          </ul>
+        </li>
+        <li>Si tanto "a" como  "b" no les interesan, no ponga ninguna marca. Como nota importante cabe señalar que <strong>NO HAY REPUESTAS BUENAS NI MALAS</strong>, procure contestar, en funcion de lo que a <strong>USTED</strong>. realmente le interesa y no en base a lo que otros podrian opinar</li>
+      </ul>
+
+      <h2>Duración</h2>
+      <p>Aproximadamente 10–15 minutos.</p>
+
+      <h2>Confidencialidad y datos</h2>
+      <ul>
+        <li>No se recolecta información personal identificable en esta etapa.</li>
+        <li>Los datos se usarán únicamente con fines académicos y se conservarán de forma anónima.</li>
+      </ul>
+
+      <div class="consent">
+        <label style="display:flex; gap:10px; align-items:flex-start;">
+          <input id="chk" type="checkbox" />
+          <span>He leído las instrucciones y <strong>acepto participar</strong> de forma voluntaria. Entiendo que el test es solo para recolección de datos y que puedo retirarme en cualquier momento.</span>
+        </label>
+
+                <!-- NUEVO: selección de sexo y grado -->
+        <div style="margin-top:12px; display:grid; gap:10px;">
+            <fieldset style="border:1px solid #eee; border-radius:10px; padding:10px;">
+            <legend style="padding:0 6px;">Sexo (obligatorio)</legend>
+            <label><input type="radio" name="sex" value="1"> Hombre</label>
+            <label><input type="radio" name="sex" value="0"> Mujer</label>
+            </fieldset>
+
+            <fieldset style="border:1px solid #eee; border-radius:10px; padding:10px;">
+            <legend style="padding:0 6px;">Grado (obligatorio)</legend>
+            <label><input type="radio" name="grade" value="4"> 4.º de secundaria</label>
+            <label><input type="radio" name="grade" value="5"> 5.º de secundaria</label>
+            <label><input type="radio" name="grade" value="0"> Ninguno</label>
+            </fieldset>
+        </div>
+
+        <div class="actions">
+            <button id="btn" disabled>Continuar al test</button>
+            <span class="muted">Marca la casilla y elige sexo y grado para continuar.</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+  const chk = document.getElementById("chk");
+  const btn = document.getElementById("btn");
+
+  const sexRadios = Array.from(document.querySelectorAll('input[name="sex"]'));
+  const gradeRadios = Array.from(document.querySelectorAll('input[name="grade"]'));
+
+  // Si ya aceptó y ya eligió sexo+grado, entrar directo:
+  const consent = localStorage.getItem("casm83_consent") === "true";
+  const sexSaved = localStorage.getItem("casm83_sex");
+  const gradeSaved = localStorage.getItem("casm83_grade");
+
+  if (consent && sexSaved !== null && gradeSaved !== null) {
+    window.location.href = "/index.html"; // cambia a /index.html cuando actives el envío
+  }
+
+  function selectionsValid() {
+    const sexChecked = sexRadios.some(r => r.checked);
+    const gradeChecked = gradeRadios.some(r => r.checked);
+    return chk.checked && sexChecked && gradeChecked;
+  }
+
+  function refreshButton() {
+    if (selectionsValid()) {
+      btn.classList.add("enabled");
+      btn.removeAttribute("disabled");
+    } else {
+      btn.classList.remove("enabled");
+      btn.setAttribute("disabled", "true");
+    }
+  }
+
+  chk.addEventListener("change", refreshButton);
+  sexRadios.forEach(r => r.addEventListener("change", refreshButton));
+  gradeRadios.forEach(r => r.addEventListener("change", refreshButton));
+
+btn.addEventListener("click", async () => {
+  // Guardar consentimiento, sexo y grado
+  const sex = document.querySelector('input[name="sex"]:checked')?.value;
+  const grade = document.querySelector('input[name="grade"]:checked')?.value;
+
+  if (!selectionsValid() || sex == null || grade == null) return;
+
+  localStorage.setItem("casm83_consent", "true");
+  localStorage.setItem("casm83_sex", String(sex));     // 1=hombre, 0=mujer
+  localStorage.setItem("casm83_grade", String(grade)); // 4,5,0
+
+  // 🔹 Enviar a la base de datos
+  try {
+    const resp = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sex: Number(sex), grade: Number(grade) })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Error desconocido");
+
+    console.log("✅ Registro enviado. ID:", data.id);
+    alert("✅ Registro guardado correctamente.");
+
+    // Guardar el respondentId en localStorage
+    localStorage.setItem("casm83_respondentId", data.id);
+
+    // Luego redirigir al test o lista
+    window.location.href = "/index.html"; // más adelante será /index.html
+  } catch (e) {
+    console.error(e);
+    alert("❌ No se pudo registrar el participante.");
+  }
+});
+</script>
+</body>
+</html>

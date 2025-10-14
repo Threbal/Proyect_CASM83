@@ -1,0 +1,32 @@
+
+<!doctype html>
+
+<html lang="es">
+    <!-- Guard: exige consentimiento + sexo + grado -->
+  <script>
+    const consent = localStorage.getItem("casm83_consent") === "true";
+    const sexLS = localStorage.getItem("casm83_sex");
+    const gradeLS = localStorage.getItem("casm83_grade");
+    if (!consent || sexLS === null || gradeLS === null) {
+      location.href = "/instrucciones.html";
+    }
+  </script>
+
+<head>
+  <meta charset="utf-8" />
+  <title>CASM83 - Ítems A/B</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+
+<body>
+  <h1>Ítems CASM83</h1>
+  <div id="list"></div>
+  <button id="prevBtn" disabled>Anterior</button>
+  <button id="nextBtn" disabled>Siguiente</button>
+  <button id="sendBtn">Enviar respuestas</button>
+
+  <script src="scripts/Index.js"></script>
+</body>
+
+</html>
