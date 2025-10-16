@@ -44,7 +44,6 @@ target/
 .gradle/
 build/
 
-# Mongo/MariaDB dumps (si generas exportaciones locales)
-dump/
-*.sql
-*.bak
+# permitir scripts SQL del proyecto
+!public/scripts/*.sql
+!public/scripts/**/*.sql
