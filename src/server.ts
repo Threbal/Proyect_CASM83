@@ -15,16 +15,14 @@ app.use(express.static("public"));
 app.use(express.json({ limit: "1mb" }));
 
 app.post("/api/register", async (req: Request, res: Response) => {
-  const body = req.body as { sex: number; grade: number; answers: number[] };
+  const body = req.body as { sex: number; grade: number; answers?: number[] };
 
-  // Validación básica
   if (body.sex !== 0 && body.sex !== 1) {
     return res.status(400).json({ error: "sexo inválido (1=hombre, 0=mujer)" });
   }
   if (![0, 4, 5].includes(body.grade)) {
     return res.status(400).json({ error: "grado inválido (4, 5 o 0)" });
   }
-  
 
   try {
     const [result]: any = await pool.query(
@@ -34,16 +32,14 @@ app.post("/api/register", async (req: Request, res: Response) => {
     const id = result.insertId;
     res.json({ ok: true, id });
   } catch (e) {
-    console.error(e);
+    console.error("register error:", e);
     res.status(500).json({ error: "error guardando datos" });
   }
 });
 
-
 app.post("/api/submit", async (req: Request, res: Response) => {
   const { respondentId, answers } = req.body as { respondentId: number; answers: number[] };
 
-  // Validación de los datos
   if (!respondentId || !Array.isArray(answers) || answers.length === 0) {
     return res.status(400).json({ error: "Faltan datos para enviar respuestas" });
   }
@@ -54,19 +50,18 @@ app.post("/api/submit", async (req: Request, res: Response) => {
 
     const placeholders = answers.map(() => "(?, ?, ?)").join(",");
     const values: any[] = [];
-    answers.forEach((v, i) => values.push(respondentId, i + 1, v)); // `question_no = i+1`
+    answers.forEach((v, i) => values.push(respondentId, i + 1, v)); // question_no = i+1
 
-    // Guardar las respuestas en la tabla `answer`
     await conn.execute(
       `INSERT INTO answer (respondent_id, question_no, value) VALUES ${placeholders}`,
       values
     );
 
-    await conn.commit();  // Confirmar la transacción
-    res.json({ ok: true });  // Responder con éxito
+    await conn.commit();
+    res.json({ ok: true });
   } catch (e) {
-    await conn.rollback();  // Si hay un error, deshacer la transacción
-    console.error(e);
+    await conn.rollback();
+    console.error("submit error:", e);
     res.status(500).json({ error: "Error guardando respuestas" });
   } finally {
     conn.release();
@@ -74,22 +69,34 @@ app.post("/api/submit", async (req: Request, res: Response) => {
 });
 
 const pool: Pool = createPool({
-  host: process.env.DB_HOST!,
-  user: process.env.DB_USER!,
-  password: process.env.DB_PASSWORD!,
-  database: process.env.DB_NAME!,
+  host: process.env.DB_HOST!,                         // ${MYSQLHOST}
+  port: Number(process.env.DB_PORT || 3306),          // 3306
+  user: process.env.DB_USER!,                         // ${MYSQLUSER}
+  password: process.env.DB_PASSWORD!,                 // ${MYSQL_ROOT_PASSWORD}
+  database: process.env.DB_NAME!,                     // ${MYSQL_DATABASE} (railway)
   waitForConnections: true,
-  connectionLimit: 30
+  connectionLimit: 30,
+  queueLimit: 0,
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+  multipleStatements: true, // para correr migrate.sql en el siguiente paso
 });
 
-app.get("/api/health", (_req: Request, res: Response) => {
-  res.json({ ok: true });
+// Health real: prueba DB
+app.get("/api/health", async (_req: Request, res: Response) => {
+  try {
+    const [rows] = await pool.query("SELECT 1 AS ok");
+    const ok = Array.isArray(rows) && (rows as any)[0]?.ok === 1;
+    res.json({ ok });
+  } catch (e) {
+    console.error("Health DB error:", e);
+    res.status(500).json({ ok: false, error: "DB error" });
+  }
 });
 
 app.get("/api/questions", async (req: Request, res: Response) => {
-  const page = Number(req.query.page) || 1;  // Página solicitada (por defecto la página 1)
-  const limit = 13;  // Número de preguntas por página
-  const offset = (page - 1) * limit;  // Calcular el desplazamiento (offset) para las preguntas
+  const page = Number(req.query.page) || 1;
+  const limit = 13;
+  const offset = (page - 1) * limit;
 
   try {
     const [rows] = await pool.query(
@@ -98,15 +105,15 @@ app.get("/api/questions", async (req: Request, res: Response) => {
     );
     res.json(rows);
   } catch (e) {
-    console.error(e);
+    console.error("questions error:", e);
     res.status(500).json({ error: "No se pudieron listar las preguntas" });
   }
 });
 
 
 const port = Number(process.env.PORT || 3000);
-app.listen(port, () => {
-  console.log(`API escuchando en http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`API CASM-83 escuchando en :${port}`);
 });
 
 export { app, pool };
