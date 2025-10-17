@@ -70,7 +70,7 @@ app.post("/api/submit", async (req: Request, res: Response) => {
 
 const pool: Pool = createPool({
   host: process.env.DB_HOST!,                         // ${MYSQLHOST}
-  port: Number(process.env.DB_PORT || 3306),          // 3306 -> 42008 (railway)
+  port: Number(process.env.DB_PORT || 42008),          // 3306 -> 42008 (railway)
   user: process.env.DB_USER!,                         // ${MYSQLUSER}
   password: process.env.DB_PASSWORD!,                 // ${MYSQL_ROOT_PASSWORD}
   database: process.env.DB_NAME!,                     // ${MYSQL_DATABASE} (railway)
