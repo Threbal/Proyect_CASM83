@@ -2,17 +2,14 @@
   "name": "casm83",
   "version": "1.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
-    "migrate": "node dist/scripts/migrate.js",
-    "seed:questions": "node dist/scripts/seed-questions.js"
-  },
-  
   "engines": { "node": ">=18" },
   "main": "dist/server.js",
-
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "node ./node_modules/typescript/bin/tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "seed:questions": "tsx scripts/seed-questions.ts"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -28,7 +25,4 @@
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.20.6"
   }
-
-
-  
 }

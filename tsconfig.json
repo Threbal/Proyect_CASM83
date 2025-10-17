@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     // Paths
-    "rootDir": ".",
+    "rootDir": "./src",
     "outDir": "./dist",
 
     // Node ESM real
@@ -15,10 +15,10 @@
     "strict": true,
     "skipLibCheck": true,
 
-    // Mapas opcionales
+    // Mapas opcionales (puedes apagar para builds más rápidos)
     "sourceMap": false,
     "declaration": false,
     "declarationMap": false
   },
-  "include": ["src", "scripts"]
+  "include": ["src"]
 }
