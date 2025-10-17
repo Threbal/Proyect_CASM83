@@ -11,7 +11,7 @@
     "build": "node ./node_modules/typescript/bin/tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "seed:questions": "tsx scripts/seed-questions.ts",
-    "health:print": "node -e \"console.log('DB_HOST=', process.env.DB_HOST || process.env.MYSQLHOST, ' DB_PORT=', process.env.DB_PORT || process.env.MYSQLPORT)\""
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "cors": "^2.8.5",
