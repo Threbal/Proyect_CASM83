@@ -1,34 +1,42 @@
 // src/db.ts
 import { createPool } from 'mysql2/promise';
+import dotenv from 'dotenv';
+dotenv.config(); // Cargar las variables de entorno desde el archivo .env
 
-// Cargamos las variables de entorno
-const env = process.env;
+// Obtener las variables de entorno directamente
+const {
+  MYSQLHOST,
+  MYSQLPORT = 3306,
+  MYSQLUSER = 'root', // Usuario por defecto es root en Railway
+  MYSQLPASSWORD,
+  MYSQLDATABASE,
+  DB_SSL
+} = process.env;
 
-const DB_HOST = env.DB_HOST || env.MYSQLHOST;
-const DB_PORT = Number(env.DB_PORT || env.MYSQLPORT || 3306);
-const DB_USER = env.DB_USER || env.MYSQLUSER;
-const DB_PASSWORD = env.DB_PASSWORD || env.MYSQLPASSWORD;
-const DB_NAME = env.DB_NAME || env.MYSQLDATABASE;
-const DB_SSL = env.DB_SSL; // Para SSL si se requiere en Railway
-
-// SSL solo si es un servidor proxy o Railway
+// Configurar el uso de SSL si es necesario
 const shouldUseSSL =
   (DB_SSL && DB_SSL.toLowerCase() === 'true') ||
-  (!!DB_HOST && /(\.rlwy\.net|railway|proxy)/i.test(DB_HOST));
+  (MYSQLHOST && /(\.rlwy\.net|railway|proxy)/i.test(MYSQLHOST));
 
+// Crear el pool de conexiones a la base de datos
 export const pool = createPool({
-  host: DB_HOST,
-  port: DB_PORT,
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_NAME,
+  host: MYSQLHOST, // Host de la base de datos proporcionado por Railway
+  port: Number(MYSQLPORT), // Puerto (3306 por defecto)
+  user: MYSQLUSER, // Usuario de la base de datos (root en Railway)
+  password: MYSQLPASSWORD, // Contraseña de la base de datos
+  database: MYSQLDATABASE, // Nombre de la base de datos (casm83)
   waitForConnections: true,
   connectionLimit: 6,
-  ...(shouldUseSSL ? { ssl: { rejectUnauthorized: false } } : {})
+  ...(shouldUseSSL ? { ssl: { rejectUnauthorized: false } } : {}) // Habilitar SSL si es necesario
 });
 
-// Para verificar la conexión
+// Función de salud para verificar la conexión
 export async function pingDB() {
-  const [rows]: any = await pool.query('SELECT NOW() AS now');
-  return rows?.[0]?.now;
+  try {
+    const [rows]: any = await pool.query('SELECT NOW() AS now');
+    return rows?.[0]?.now; // Devuelve el tiempo actual de la base de datos
+  } catch (error) {
+    console.error("Error al verificar la conexión a la base de datos:", error);
+    throw error; // Lanza el error para que pueda ser manejado
+  }
 }
