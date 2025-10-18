@@ -1,24 +1,24 @@
 {
   "compilerOptions": {
     // Paths
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "rootDir": "./src",           // Punto de entrada (src/)
+    "outDir": "./dist",           // Genera el código compilado en dist/
 
     // Node ESM real
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2020",
-    "lib": ["ES2020"],
+    "module": "ES2022",           // Para NodeNext y ESModules
+    "moduleResolution": "node",   // Resuelve módulos de manera adecuada
+    "target": "ES2022",           // Mejor compatibilidad con Node 18+
+    "lib": ["ES2022"],            // Librerías estándar de ES2022
 
     // Interop / calidad
-    "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
+    "esModuleInterop": true,      // Importa módulos CJS sin problemas
+    "strict": true,               // Habilita todas las verificaciones estrictas
+    "skipLibCheck": true,         // Omite la verificación de librerías
 
-    // Mapas opcionales (puedes apagar para builds más rápidos)
-    "sourceMap": false,
-    "declaration": false,
-    "declarationMap": false
+    // Mapas opcionales (mejor rendimiento si no los usas)
+    "sourceMap": false,           // Desactiva si no necesitas mapear
+    "declaration": false,         // No genera archivos .d.ts
+    "declarationMap": false       // Desactiva mapas de declaración
   },
-  "include": ["src"]
+  "include": ["src"]              // Solo incluye la carpeta src/
 }
