@@ -95,7 +95,7 @@
   function selectionsValid() {
     const sexChecked = sexRadios.some(r => r.checked);
     const gradeChecked = gradeRadios.some(r => r.checked);
-    return chk.checked && sexChecked && gradeChecked;
+    return  sexChecked && gradeChecked;
   }
 
   function refreshButton() {
