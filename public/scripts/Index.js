@@ -1,135 +1,171 @@
+// public/scripts/index.js
 const API = "/api/questions";
-  const API_SUBMIT = "/api/submit";
+const API_SUBMIT = "/api/submit";
 
-  const sendBtn = document.getElementById("sendBtn");
-  const list = document.getElementById("list");
-  const nextBtn = document.getElementById("nextBtn");
-  const prevBtn = document.getElementById("prevBtn");
+const sendBtn = document.getElementById("sendBtn");
+const list = document.getElementById("list");
+const nextBtn = document.getElementById("nextBtn");
+const prevBtn = document.getElementById("prevBtn");
 
-  const PAGE_SIZE = 13;                    // ajusta si tu backend pagina distinto
-  const ANSWERS_KEY = "casm83_answers";    // { [qNo]: 0|1|2|3 }
-  let currentPage = 1;
+const STORAGE_KEY = "casm83_answers";           // { [question_no]: value }
+const PAGE_SIZE = 13;
+const TOTAL_ITEMS = 143;                         // CASM-83 R-2014
+const TOTAL_PAGES = Math.ceil(TOTAL_ITEMS / PAGE_SIZE);
 
-  // --- Helpers de almacenamiento ---
-  const readAnswers = () => {
-    try { return JSON.parse(localStorage.getItem(ANSWERS_KEY)) || {}; }
-    catch { return {}; }
-  };
-  const writeAnswers = (obj) => {
-    localStorage.setItem(ANSWERS_KEY, JSON.stringify(obj || {}));
-  };
-  const anyAnswered = () => Object.keys(readAnswers()).length > 0;
+let currentPage = Number(localStorage.getItem("casm83_currentPage") || 1);
 
-  // --- Habilita/Deshabilita el botón Enviar según haya alguna respuesta ---
-  function refreshSendButton() {
-    if (anyAnswered()) {
-      sendBtn.removeAttribute("disabled");
-      sendBtn.classList.add("enabled");
-    } else {
-      sendBtn.setAttribute("disabled", "true");
-      sendBtn.classList.remove("enabled");
-    }
-  }
+// ---------- helpers de almacenamiento ----------
+function getAnswerMap() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
+}
+function setAnswer(qNo, val) {
+  const map = getAnswerMap();
+  map[qNo] = Number(val);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+}
+function getAnswer(qNo) {
+  const map = getAnswerMap();
+  return map[qNo];
+}
+function countAnswered() {
+  return Object.keys(getAnswerMap()).length;
+}
+function allAnswered() {
+  return countAnswered() >= TOTAL_ITEMS;
+}
+function updateSendButtonState() {
+  sendBtn.disabled = !allAnswered();
+}
 
-  // --- Render de página ---
-  async function load() {
-    try {
-      const r = await fetch(`${API}?page=${currentPage}`);
-      const data = await r.json();
+// ---------- render de página ----------
+async function load() {
+  try {
+    const r = await fetch(`${API}?page=${currentPage}`);
+    const data = await r.json();
 
-      if (!Array.isArray(data) || data.length === 0) {
-        list.innerHTML = `<div class="empty">No hay preguntas para esta página.</div>`;
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = true;
-        refreshSendButton();
-        return;
-      }
-
-      const saved = readAnswers();
-
-      list.innerHTML = data.map(q => `
-        <div class="q" data-qno="${q.question_no}">
-          <h3>Ítem ${q.question_no}</h3>
-          <div class="opt"><strong>A)</strong> ${q.text_a}</div>
-          <div class="opt"><strong>B)</strong> ${q.text_b}</div>
-          <div class="opt answers">
-            ${[1,2,3,0].map(v => {
-              const labels = {1:"Seleccionar A",2:"Seleccionar B",3:"Seleccionar Ambos",0:"Ninguno"};
-              const checked = String(saved[q.question_no] ?? "") === String(v) ? "checked" : "";
-              return `<label><input type="radio" name="question-${q.question_no}" value="${v}" ${checked}> ${labels[v]}</label>`;
-            }).join("")}
-          </div>
-        </div>
-      `).join("");
-
-      // Guardar selección al marcar
-      list.querySelectorAll('input[type="radio"]').forEach(input => {
-        input.addEventListener("change", e => {
-          const qNo = e.target.name.replace("question-","");
-          const val = Number(e.target.value);
-          const obj = readAnswers();
-          obj[qNo] = val;
-          writeAnswers(obj);
-          refreshSendButton();
-        });
-      });
-
-      // Navegación
-      prevBtn.disabled = currentPage === 1;
-      nextBtn.disabled = data.length < PAGE_SIZE;
-
-      // Actualiza botón enviar
-      refreshSendButton();
-
-    } catch (e) {
-      console.error(e);
-      list.innerHTML = `<div class="empty">Error cargando las preguntas.</div>`;
-      refreshSendButton();
-    }
-  }
-
-  // --- Paginación ---
-  nextBtn.addEventListener("click", () => { currentPage++; load(); });
-  prevBtn.addEventListener("click", () => { currentPage = Math.max(1, currentPage - 1); load(); });
-
-  // --- Enviar (sin autocompletar con 0s aquí; solo envía lo que haya seleccionado) ---
-  sendBtn.addEventListener("click", async () => {
-    const respondentId = localStorage.getItem("casm83_respondentId");
-    if (!respondentId) {
-      alert("❌ No se encontró el ID del participante.");
+    if (!Array.isArray(data) || data.length === 0) {
+      list.innerHTML = `<div class="empty">No hay preguntas cargadas aún. Ejecuta el seed y recarga.</div>`;
       return;
     }
 
-    const saved = readAnswers(); // objeto { "1":3, "2":1, ... }
+    // Render
+    list.innerHTML = data.map(q => {
+      const saved = getAnswer(q.question_no);
+      return `
+        <div class="q" data-q="${q.question_no}">
+          <h3>Ítem ${q.question_no}</h3>
+          <div class="opt"><strong>A)</strong> ${q.text_a}</div>
+          <div class="opt"><strong>B)</strong> ${q.text_b}</div>
+          <div class="opt radios">
+            <label><input type="radio" name="question-${q.question_no}" value="1" ${saved===1?"checked":""}> A</label>
+            <label><input type="radio" name="question-${q.question_no}" value="2" ${saved===2?"checked":""}> B</label>
+            <label><input type="radio" name="question-${q.question_no}" value="3" ${saved===3?"checked":""}> Ambos</label>
+            <label><input type="radio" name="question-${q.question_no}" value="0" ${saved===0?"checked":""}> Ninguno</label>
+          </div>
+        </div>
+      `;
+    }).join("");
 
-    const payload = {
-      respondentId: Number(respondentId),
-      // Si tu backend espera arreglo fijo, cambia esta parte por
-      // la construcción 1..TOTAL_QUESTIONS. Aquí mandamos solo contestadas:
-      answers: saved
-    };
-
-    try {
-      const resp = await fetch(API_SUBMIT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+    // Guardar al cambiar cualquier radio
+    list.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener("change", (e) => {
+        const input = e.target;
+        const wrapper = input.closest(".q");
+        const qNo = Number(wrapper.dataset.q);
+        setAnswer(qNo, input.value);
+        updateSendButtonState();
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || "Error al enviar.");
+    });
 
+    // Estado de navegación
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= TOTAL_PAGES;
+
+    // Guardar página actual
+    localStorage.setItem("casm83_currentPage", String(currentPage));
+
+    // Actualizar botón enviar según progreso global
+    updateSendButtonState();
+
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = `<div class="empty">Error cargando las preguntas.</div>`;
+  }
+}
+
+// ---------- navegación ----------
+function saveCurrentSelectionsBeforeNav() {
+  // No hace falta: ya guardamos onChange de cada radio.
+  // Esta función queda por si quieres validar algo adicional antes de navegar.
+}
+
+nextBtn.addEventListener("click", () => {
+  saveCurrentSelectionsBeforeNav();
+  if (currentPage < TOTAL_PAGES) {
+    currentPage++;
+    load();
+  }
+});
+
+prevBtn.addEventListener("click", () => {
+  saveCurrentSelectionsBeforeNav();
+  if (currentPage > 1) {
+    currentPage--;
+    load();
+  }
+});
+
+// ---------- envío ----------
+sendBtn.addEventListener("click", async () => {
+  const respondentId = Number(localStorage.getItem("casm83_respondentId"));
+  if (!respondentId) {
+    alert("❌ No se encontró el ID del participante. Regrese a instrucciones.");
+    return;
+  }
+
+  // Validar que todas estén respondidas
+  const map = getAnswerMap();
+  const missing = [];
+  for (let q = 1; q <= TOTAL_ITEMS; q++) {
+    if (map[q] === undefined) missing.push(q);
+  }
+  if (missing.length) {
+    const first = missing[0];
+    const targetPage = Math.ceil(first / PAGE_SIZE);
+    alert(`❗ Faltan ${missing.length} ítems por responder. Te llevo al ítem ${first}.`);
+    currentPage = targetPage;
+    await load();
+    // scroll hacia el ítem faltante en la página
+    const el = document.querySelector(`.q[data-q="${first}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  // Construir arreglo en orden 1..143
+  const answers = Array.from({ length: TOTAL_ITEMS }, (_, i) => Number(map[i + 1]));
+
+  try {
+    const resp = await fetch(API_SUBMIT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ respondentId, answers })
+    });
+    const data = await resp.json();
+    if (data.ok) {
       alert("✅ Respuestas enviadas correctamente.");
-      // Limpieza mínima
-      localStorage.removeItem(ANSWERS_KEY);
-      // (si quieres) localStorage.removeItem("casm83_respondentId");
-      window.location.href = "/gracias.html";
-    } catch (e) {
-      console.error(e);
+      // Mantén respondentId si luego quieres mostrar PDF; si no, límpialo también.
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem("casm83_currentPage");
+      window.location.href = "/instrucciones.html";
+    } else {
       alert("❌ Error al enviar las respuestas.");
     }
-  });
+  } catch (e) {
+    console.error(e);
+    alert("❌ Error de red al enviar las respuestas.");
+  }
+});
 
-  // --- Carga inicial ---
-  // Arranca con el botón deshabilitado hasta que el usuario marque algo
-  sendBtn.setAttribute("disabled", "true");
-  load();
+// ---------- init ----------
+load();
