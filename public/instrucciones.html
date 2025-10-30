@@ -78,7 +78,6 @@
   </div>
 
 <script>
-  const chk = document.getElementById("chk");
   const btn = document.getElementById("btn");
 
   const sexRadios = Array.from(document.querySelectorAll('input[name="sex"]'));
@@ -108,7 +107,6 @@
     }
   }
 
-  chk.addEventListener("change", refreshButton);
   sexRadios.forEach(r => r.addEventListener("change", refreshButton));
   gradeRadios.forEach(r => r.addEventListener("change", refreshButton));
 
