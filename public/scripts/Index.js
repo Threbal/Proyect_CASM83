@@ -16,12 +16,7 @@ let currentPage = Number(localStorage.getItem("casm83_currentPage") || 1);
 
 
 // --- GUARD: exigir registro previo ---
-const respondentId = localStorage.getItem("casm83_respondentId");
-if (!respondentId) {
-  // si entran directo al test sin pasar por instrucciones
-  location.replace("/instrucciones.html");
-  // return; // opcional, por claridad
-}
+
 
 // ---------- helpers de almacenamiento ----------
 function getAnswerMap() {
