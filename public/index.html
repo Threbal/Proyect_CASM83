@@ -4,10 +4,9 @@
 <html lang="es">
     <!-- Guard: exige consentimiento + sexo + grado -->
   <script>
-    const consent = localStorage.getItem("casm83_consent") === "true";
     const sexLS = localStorage.getItem("casm83_sex");
     const gradeLS = localStorage.getItem("casm83_grade");
-    if (!consent || sexLS === null || gradeLS === null) {
+    if (sexLS === null || gradeLS === null) {
       location.href = "/instrucciones.html";
     }
   </script>

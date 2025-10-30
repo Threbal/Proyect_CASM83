@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>CASM83 — Instrucciones y Consentimiento</title>
+  <title>CASM83 — Instrucciones</title>
   <link rel="stylesheet" href="/css/instrucciones.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
@@ -52,12 +52,6 @@
         <li>Los datos se usarán únicamente con fines académicos y se conservarán de forma anónima.</li>
       </ul>
 
-      <div class="consent">
-        <label style="display:flex; gap:10px; align-items:flex-start;">
-          <input id="chk" type="checkbox" />
-          <span>He leído las instrucciones y <strong>acepto participar</strong> de forma voluntaria. Entiendo que el test es solo para recolección de datos y que puedo retirarme en cualquier momento.</span>
-        </label>
-
                 <!-- NUEVO: selección de sexo y grado -->
         <div style="margin-top:12px; display:grid; gap:10px;">
             <fieldset style="border:1px solid #eee; border-radius:10px; padding:10px;">
@@ -91,11 +85,10 @@
   const gradeRadios = Array.from(document.querySelectorAll('input[name="grade"]'));
 
   // Si ya aceptó y ya eligió sexo+grado, entrar directo:
-  const consent = localStorage.getItem("casm83_consent") === "true";
   const sexSaved = localStorage.getItem("casm83_sex");
   const gradeSaved = localStorage.getItem("casm83_grade");
 
-  if (consent && sexSaved !== null && gradeSaved !== null) {
+  if (sexSaved !== null && gradeSaved !== null) {
     window.location.href = "/index.html"; // cambia a /index.html cuando actives el envío
   }
 
@@ -126,7 +119,6 @@ btn.addEventListener("click", async () => {
 
   if (!selectionsValid() || sex == null || grade == null) return;
 
-  localStorage.setItem("casm83_consent", "true");
   localStorage.setItem("casm83_sex", String(sex));     // 1=hombre, 0=mujer
   localStorage.setItem("casm83_grade", String(grade)); // 4,5,0
 
