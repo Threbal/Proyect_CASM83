@@ -14,6 +14,15 @@ const TOTAL_PAGES = Math.ceil(TOTAL_ITEMS / PAGE_SIZE);
 
 let currentPage = Number(localStorage.getItem("casm83_currentPage") || 1);
 
+
+// --- GUARD: exigir registro previo ---
+const respondentId = localStorage.getItem("casm83_respondentId");
+if (!respondentId) {
+  // si entran directo al test sin pasar por instrucciones
+  location.replace("/instrucciones.html");
+  // return; // opcional, por claridad
+}
+
 // ---------- helpers de almacenamiento ----------
 function getAnswerMap() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
@@ -37,6 +46,8 @@ function allAnswered() {
 function updateSendButtonState() {
   sendBtn.disabled = !allAnswered();
 }
+
+
 
 // ---------- render de página ----------
 async function load() {
@@ -146,24 +157,35 @@ sendBtn.addEventListener("click", async () => {
   const answers = Array.from({ length: TOTAL_ITEMS }, (_, i) => Number(map[i + 1]));
 
   try {
+    sendBtn.disabled = true;
     const resp = await fetch(API_SUBMIT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ respondentId, answers })
     });
     const data = await resp.json();
+
     if (data.ok) {
       alert("✅ Respuestas enviadas correctamente.");
-      // Mantén respondentId si luego quieres mostrar PDF; si no, límpialo también.
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem("casm83_currentPage");
-      window.location.href = "/instrucciones.html";
+    // limpia TODO lo relacionado al alumno y su progreso
+    localStorage.removeItem("casm83_consent");
+    localStorage.removeItem("casm83_sex");
+    localStorage.removeItem("casm83_grade");
+    localStorage.removeItem("casm83_respondentId");
+    localStorage.removeItem("casm83_answers");
+    localStorage.removeItem("casm83_currentPage");
+
+    // regresar a instrucciones y evitar “volver” del navegador
+    location.replace("/instrucciones.html");
+
     } else {
       alert("❌ Error al enviar las respuestas.");
+      sendBtn.disabled = false;
     }
   } catch (e) {
     console.error(e);
     alert("❌ Error de red al enviar las respuestas.");
+    sendBtn.disabled = false;
   }
 });
 
