@@ -1,6 +1,4 @@
-// public/scripts/Index.js
-
-  const API = "/api/questions";
+const API = "/api/questions";
   const API_SUBMIT = "/api/submit";
 
   const sendBtn = document.getElementById("sendBtn");
@@ -8,33 +6,42 @@
   const nextBtn = document.getElementById("nextBtn");
   const prevBtn = document.getElementById("prevBtn");
 
-  // 🔧 Config
-  const TOTAL_QUESTIONS = 143;           // <-- ajusta si cambia
-  const PAGE_SIZE = 13;                   // <-- si tu paginación es otra, cambia
-  const ANSWERS_KEY = "casm83_answers";   // Mapa { [qNo]: value }
+  const PAGE_SIZE = 13;                    // ajusta si tu backend pagina distinto
+  const ANSWERS_KEY = "casm83_answers";    // { [qNo]: 0|1|2|3 }
   let currentPage = 1;
 
-  // Carga/guarda respuestas en localStorage como objeto { "1":1, "2":3, ... }
-  function readAnswers() {
+  // --- Helpers de almacenamiento ---
+  const readAnswers = () => {
     try { return JSON.parse(localStorage.getItem(ANSWERS_KEY)) || {}; }
     catch { return {}; }
-  }
-  function writeAnswers(obj) {
+  };
+  const writeAnswers = (obj) => {
     localStorage.setItem(ANSWERS_KEY, JSON.stringify(obj || {}));
+  };
+  const anyAnswered = () => Object.keys(readAnswers()).length > 0;
+
+  // --- Habilita/Deshabilita el botón Enviar según haya alguna respuesta ---
+  function refreshSendButton() {
+    if (anyAnswered()) {
+      sendBtn.removeAttribute("disabled");
+      sendBtn.classList.add("enabled");
+    } else {
+      sendBtn.setAttribute("disabled", "true");
+      sendBtn.classList.remove("enabled");
+    }
   }
 
-  // Render de página
+  // --- Render de página ---
   async function load() {
     try {
       const r = await fetch(`${API}?page=${currentPage}`);
       const data = await r.json();
 
       if (!Array.isArray(data) || data.length === 0) {
-        list.innerHTML = `<div class="empty">No hay preguntas cargadas aún. Ejecuta el seed y recarga.</div>`;
-        // Si no hay datos en esta página y no es la 1, retrocede 1
-        if (currentPage > 1) { currentPage--; }
+        list.innerHTML = `<div class="empty">No hay preguntas para esta página.</div>`;
         prevBtn.disabled = currentPage === 1;
         nextBtn.disabled = true;
+        refreshSendButton();
         return;
       }
 
@@ -55,32 +62,37 @@
         </div>
       `).join("");
 
-      // Guardar al cambiar una selección
-      list.querySelectorAll('input[type="radio"]').forEach(radio => {
-        radio.addEventListener("change", e => {
-          const input = e.target;
-          const qNo = input.name.replace("question-","");
-          const val = Number(input.value);
+      // Guardar selección al marcar
+      list.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.addEventListener("change", e => {
+          const qNo = e.target.name.replace("question-","");
+          const val = Number(e.target.value);
           const obj = readAnswers();
           obj[qNo] = val;
           writeAnswers(obj);
+          refreshSendButton();
         });
       });
 
       // Navegación
       prevBtn.disabled = currentPage === 1;
-      nextBtn.disabled = data.length < PAGE_SIZE; // deshabilita si esta página vino "incompleta"
+      nextBtn.disabled = data.length < PAGE_SIZE;
+
+      // Actualiza botón enviar
+      refreshSendButton();
+
     } catch (e) {
       console.error(e);
       list.innerHTML = `<div class="empty">Error cargando las preguntas.</div>`;
+      refreshSendButton();
     }
   }
 
-  // Paginación
+  // --- Paginación ---
   nextBtn.addEventListener("click", () => { currentPage++; load(); });
   prevBtn.addEventListener("click", () => { currentPage = Math.max(1, currentPage - 1); load(); });
 
-  // Envío real de respuestas (sin valores “de prueba”)
+  // --- Enviar (sin autocompletar con 0s aquí; solo envía lo que haya seleccionado) ---
   sendBtn.addEventListener("click", async () => {
     const respondentId = localStorage.getItem("casm83_respondentId");
     if (!respondentId) {
@@ -88,21 +100,13 @@
       return;
     }
 
-    // Construir array 1..TOTAL_QUESTIONS con lo que haya; si falta algo, 0 (Ninguno)
-    const saved = readAnswers();
-    const answers = [];
-    for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
-      const v = Number(saved[i] ?? 0);
-      answers.push(v);
-    }
-
-    // (Opcional) Validación mínima: ¿al menos N contestadas?
-    // const responded = Object.keys(saved).length;
-    // if (responded < 1) { alert("Responde al menos 1 ítem."); return; }
+    const saved = readAnswers(); // objeto { "1":3, "2":1, ... }
 
     const payload = {
       respondentId: Number(respondentId),
-      answers
+      // Si tu backend espera arreglo fijo, cambia esta parte por
+      // la construcción 1..TOTAL_QUESTIONS. Aquí mandamos solo contestadas:
+      answers: saved
     };
 
     try {
@@ -112,24 +116,20 @@
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Error al enviar.");
 
-      if (resp.ok && (data.ok ?? true)) {
-        alert("✅ Respuestas enviadas correctamente.");
-        // Limpia lo necesario (ya no usamos consentimiento)
-        localStorage.removeItem("casm83_sex");
-        localStorage.removeItem("casm83_grade");
-        localStorage.removeItem("casm83_respondentId");
-        localStorage.removeItem(ANSWERS_KEY);
-        window.location.href = "/gracias.html"; // o "/instrucciones.html" / "/resultado.html"
-      } else {
-        throw new Error(data.error || "Error al enviar las respuestas.");
-      }
+      alert("✅ Respuestas enviadas correctamente.");
+      // Limpieza mínima
+      localStorage.removeItem(ANSWERS_KEY);
+      // (si quieres) localStorage.removeItem("casm83_respondentId");
+      window.location.href = "/gracias.html";
     } catch (e) {
       console.error(e);
       alert("❌ Error al enviar las respuestas.");
     }
   });
 
-  // Primera carga
+  // --- Carga inicial ---
+  // Arranca con el botón deshabilitado hasta que el usuario marque algo
+  sendBtn.setAttribute("disabled", "true");
   load();
-
