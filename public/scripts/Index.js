@@ -14,6 +14,34 @@ const TOTAL_PAGES = Math.ceil(TOTAL_ITEMS / PAGE_SIZE);
 
 let currentPage = Number(localStorage.getItem("casm83_currentPage") || 1);
 
+//---------- gestión de ítems faltantes ----------
+// Devuelve un array con los números de ítems sin responder
+function getMissingQuestions() {
+  const map = getAnswerMap();     // ya lo tienes definido
+  const missing = [];
+  for (let q = 1; q <= TOTAL_ITEMS; q++) {
+    if (map[q] === undefined) missing.push(q);
+  }
+  return missing;
+}
+
+// Muestra un alert con los faltantes
+function showMissingAlert() {
+  const missing = getMissingQuestions();
+  if (missing.length === 0) {
+    alert("🎉 ¡Todo respondido! No hay ítems pendientes.");
+  } else {
+    // Si son muchos, los mostramos separados por comas
+    alert(`❗ Faltan ${missing.length} ítems por responder:\n${missing.join(", ")}`);
+  }
+}
+
+// Listener del botón "Ver faltantes"
+const missingBtn = document.getElementById("missingBtn");
+if (missingBtn) {
+  missingBtn.addEventListener("click", showMissingAlert);
+}
+//----------Fin gestión de ítems faltantes ----------
 
 
 // ---------- helpers de almacenamiento ----------
