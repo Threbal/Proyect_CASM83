@@ -66,3 +66,23 @@ button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
 }
+
+
+/* Alternar fondo entre preguntas (zebra) */
+#list .q:nth-child(odd)  { background: #ffffff; }
+#list .q:nth-child(even) { background: #f1f3f5; }
+
+/* Suaviza hover y mejora estética */
+#list .q { transition: background-color .15s ease; }
+#list .q:hover { background-color: #e9eef3; }
+
+/* Opcional: resalta preguntas ya respondidas (requiere soporte :has) */
+#list .q:has(input[type="radio"]:checked) {
+  box-shadow: 0 0 0 2px rgba(26,115,232,.15);
+}
+
+/* Mejora de layout para el contenedor de preguntas */
+#list {
+  width: min(900px, 92vw);
+  margin: 0 auto 24px;
+}
