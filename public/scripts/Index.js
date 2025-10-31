@@ -15,8 +15,6 @@ const TOTAL_PAGES = Math.ceil(TOTAL_ITEMS / PAGE_SIZE);
 let currentPage = Number(localStorage.getItem("casm83_currentPage") || 1);
 
 
-// --- GUARD: exigir registro previo ---
-
 
 // ---------- helpers de almacenamiento ----------
 function getAnswerMap() {
@@ -27,6 +25,21 @@ function setAnswer(qNo, val) {
   const map = getAnswerMap();
   map[qNo] = Number(val);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  updateProgress();
+}
+function updateProgress() {
+  const map = getAnswerMap();
+  // Solo contamos claves 1..TOTAL_ITEMS que realmente existen en el mapa
+  let count = 0;
+  for (let i = 1; i <= TOTAL_ITEMS; i++) {
+    if (map[i] !== undefined) count++;
+  }
+
+  const el = document.getElementById("progress");
+  if (el) el.textContent = `${count}/${TOTAL_ITEMS}`;
+
+  // Reusa la referencia global de sendBtn (ya la tienes arriba)
+  if (sendBtn) sendBtn.disabled = count < TOTAL_ITEMS;
 }
 function getAnswer(qNo) {
   const map = getAnswerMap();
@@ -93,6 +106,9 @@ async function load() {
 
     // Actualizar botón enviar según progreso global
     updateSendButtonState();
+
+    // NUEVO: refresca el contador con lo que ya esté guardado
+    updateProgress();
 
   } catch (e) {
     console.error(e);
