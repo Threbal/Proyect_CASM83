@@ -67,6 +67,21 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Contenedor de botones en una sola línea */
+.btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;     /* céntralos (o usa space-between) */
+  gap: 12px;                   /* separación uniforme */
+  width: min(900px, 92vw);     /* el mismo ancho que #list */
+  margin: 8px auto 24px;
+  flex-wrap: nowrap;           /* fuerza una sola línea */
+  overflow-x: auto;            /* si no caben, permite scroll horizontal */
+}
+
+.btn-row button {
+  margin: 0;
+}
 
 /* Alternar fondo entre preguntas (zebra) */
 #list .q:nth-child(odd)  { background: #ffffff; }
