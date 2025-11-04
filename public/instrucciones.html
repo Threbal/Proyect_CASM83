@@ -3,31 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <title>CASM83 — Instrucciones</title>
-  <link rel="stylesheet" href="/css/instrucciones.css" />
+  <link rel="stylesheet" href="css/instrucciones.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{--bg:#f7faff;--bd:#dfe9ff;--ok:#1a73e8}
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;line-height:1.55;background:#fff}
-    .wrap{max-width:900px;margin:0 auto;padding:24px}
-    .card{background:var(--bg);border:1px solid var(--bd);border-radius:16px;padding:20px}
-    h1{margin:0 0 10px 0}
-    h2{margin:18px 0 8px 0;font-size:1.15rem}
-    ul{margin:6px 0 12px 20px}
-    .consent{margin-top:12px;padding:14px;background:#fff;border:1px solid #eee;border-radius:12px}
-    .actions{margin-top:14px;display:flex;gap:10px;align-items:center}
-    button{padding:10px 16px;border-radius:10px;border:1px solid #ccc;cursor:not-allowed;background:#eee}
-    button.enabled{cursor:pointer;background:var(--ok);color:#fff;border-color:var(--ok)}
-    .muted{color:#666;font-size:.95rem}
-  </style>
 </head>
+
 <body>
+    <!-- Fondo dinámico -->
+  <div class="fx-bg" aria-hidden="true"></div>
+
   <div class="wrap">
     <div class="card">
       <h1>CASM83 — Instrucciones</h1>
       <p class="muted"> <mark> previa obligatoria antes de acceder al test. </mark></p>
 
       <h2>Objetivo</h2>
-      <p>Este cuestionario tiene fines de investigación académica para **recopilar datos** y analizar preferencias vocacionales. No entrega un diagnóstico final ni sustituye una evaluación psicológica profesional.</p>
+      <p>Este cuestionario tiene fines de investigación académica para *recopilar datos* y analizar preferencias vocacionales. No entrega un diagnóstico final ni sustituye una evaluación psicológica profesional.</p>
 
       <h2>Cómo responder</h2>
       <ul>
@@ -52,31 +42,62 @@
         <li>Los datos se usarán únicamente con fines académicos y se conservarán de forma anónima.</li>
       </ul>
 
-                <!-- NUEVO: selección de sexo y grado -->
-        <div style="margin-top:12px; display:grid; gap:10px;">
-            <fieldset style="border:1px solid #eee; border-radius:10px; padding:10px;">
-            <legend style="padding:0 6px;">Sexo (obligatorio)</legend>
-            <label><input type="radio" name="sex" value="1"> Hombre</label>
-            <label><input type="radio" name="sex" value="0"> Mujer</label>
-            </fieldset>
+        <!-- NUEVO: selección de sexo y grado (tarjetas con íconos y hover) -->
+      <div class="pickers">
+        <fieldset class="picker">
+          <legend>Genero (obligatorio)</legend>
+          <div class="option-grid">
+            <label class="option-card">
+              <input type="radio" name="sex" value="1" class="visually-hidden">
+              <span class="icon" aria-hidden="true">♂</span>
+              <span class="title">Hombre</span>
+            </label>
 
-            <fieldset style="border:1px solid #eee; border-radius:10px; padding:10px;">
-            <legend style="padding:0 6px;">Grado (obligatorio)</legend>
-            <label><input type="radio" name="grade" value="4"> 4.º de secundaria</label>
-            <label><input type="radio" name="grade" value="5"> 5.º de secundaria</label>
-            <label><input type="radio" name="grade" value="0"> Ninguno</label>
-            </fieldset>
-        </div>
+            <label class="option-card">
+              <input type="radio" name="sex" value="0" class="visually-hidden">
+              <span class="icon" aria-hidden="true">♀</span>
+              <span class="title">Mujer</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="picker">
+          <legend>Grado (obligatorio)</legend>
+          <div class="option-grid">
+            <label class="option-card">
+              <input type="radio" name="grade" value="4" class="visually-hidden">
+              <span class="icon" aria-hidden="true">4º</span>
+              <span class="title">4.º de secundaria</span>
+            </label>
+
+            <label class="option-card">
+              <input type="radio" name="grade" value="5" class="visually-hidden">
+              <span class="icon" aria-hidden="true">5º</span>
+              <span class="title">5.º de secundaria</span>
+            </label>
+
+            <label class="option-card">
+              <input type="radio" name="grade" value="0" class="visually-hidden">
+              <span class="icon" aria-hidden="true">—</span>
+              <span class="title">Ninguno</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
 
         <div class="actions">
+           <label class="option-card">
             <button id="btn" disabled>Continuar al test</button>
+          </label>
             <span class="muted">Marca la casilla y elige sexo y grado para continuar.</span>
         </div>
 
       </div>
     </div>
   </div>
-
+ <div class="wrap">
+    <!-- ...tu contenido tal cual... -->
 <script>
   const btn = document.getElementById("btn");
 

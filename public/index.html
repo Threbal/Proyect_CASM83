@@ -1,13 +1,12 @@
-
 <!doctype html>
-
 <html lang="es">
-    <!-- Guard: exige consentimiento + sexo + grado -->
+  <!-- Guard: exige consentimiento + sexo + grado -->
   <script>
     const sexLS = localStorage.getItem("casm83_sex");
     const gradeLS = localStorage.getItem("casm83_grade");
     if (sexLS === null || gradeLS === null) {
-      location.href = "/instrucciones.html";
+      // relativo para que funcione en Live Server y producción
+      location.href = "./instrucciones.html";
     }
   </script>
 
@@ -19,19 +18,105 @@
 </head>
 
 <body>
-  <h1>Ítems CASM83
-    <span id="progress" aria-live="polite">0/143</span>
-  </h1>
-  <div id="list"></div>
-  <div class="btn-row" role="toolbar" aria-label="Navegación de ítems">
-    <button id="prevBtn" disabled>Anterior</button>
-    <button id="nextBtn" disabled>Siguiente</button>
-    <button id="sendBtn">Enviar respuestas</button>
-    <button id="missingBtn" type="button">Ver faltantes</button>
-  </div>
-  <span id="progress" aria-live="polite">0/143</span>
+  <!-- Fondo dinámico -->
+  <div class="fx-bg" aria-hidden="true"></div>
 
+  <main class="wrap">
+    <header class="page-head">
+      <h1>
+        <span class="logo" aria-hidden="true">
+          <!-- ícono inline -->
+          <svg viewBox="0 0 24 24" width="24" height="24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M8 12h8M12 8v8"/>
+          </svg>
+        </span>
+        Ítems CASM83
+        <span id="progress" class="progress" aria-live="polite">0/143</span>
+      </h1>
+    </header>
+
+    <div id="list" class="list"></div>
+
+    <div class="btn-row" role="toolbar" aria-label="Navegación de ítems">
+      <button id="prevBtn" disabled>
+        <span class="btn-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </span>
+        Anterior
+      </button>
+
+      <button id="nextBtn" disabled>
+        Siguiente
+        <span class="btn-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </span>
+      </button>
+
+      <button id="sendBtn">
+        <span class="btn-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2L11 13"/>
+            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </span>
+        Enviar respuestas
+      </button>
+
+      <button id="missingBtn" type="button">
+        <span class="btn-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4"/>
+            <path d="M12 16h.01"/>
+          </svg>
+        </span>
+        Ver faltantes
+      </button>
+    </div>
+  </main>
+
+  <!-- OJO: en Linux (Railway) distingue mayúsculas/minúsculas -->
+  <!-- Asegúrate que el archivo sea exactamente 'scripts/index.js' o cambia el nombre aquí -->
   <script src="scripts/Index.js"></script>
-</body>
 
+  <!-- Fondo que sigue el mouse (respeta reduce motion) -->
+  <script>
+    (function(){
+      const bg = document.querySelector('.fx-bg');
+      if(!bg) return;
+      let reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) return;
+
+      let tx = 50, ty = 50, x = tx, y = ty;
+      function onMove(e){
+        const vw = innerWidth, vh = innerHeight;
+        tx = (e.clientX / vw) * 100;
+        ty = (e.clientY / vh) * 100;
+      }
+      addEventListener('mousemove', onMove, { passive:true });
+      (function loop(){
+        x += (tx - x) * 0.08;
+        y += (ty - y) * 0.08;
+        bg.style.setProperty('--mx', x + '%');
+        bg.style.setProperty('--my', y + '%');
+        requestAnimationFrame(loop);
+      })();
+    })();
+  </script>
+</body>
 </html>
