@@ -1,49 +1,32 @@
-# Node / JS
+# Node modules
 node_modules/
-dist/
-build/
-coverage/
-.nyc_output/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-.eslintcache
 
-# TypeScript
+# Archivos de configuración de entorno
+.env
+.env.*
+
+# Archivos de compilación
+dist/
+
+# Archivos de logs
+*.log
+
+# Archivos temporales de VSCode
+.vscode/
+
+# Archivos de dependencias de Yarn (si usas Yarn)
+.yarn/
+.yarn-cache/
+
+# Archivos de dependencias de npm (si usas npm)
+npm-debug.log*
+
+# Archivos de dependencias de pnpm (si usas pnpm)
+pnpm-debug.log*
+
+# Archivos generados por TypeScript
 *.tsbuildinfo
 
-# VS Code
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/launch.json
-!.vscode/tasks.json
-
-# Env & credenciales
-.env
-.env.*.local
-*.env
-
-# OS
+# Archivos de sistema
 .DS_Store
 Thumbs.db
-
-# Python (si usas Colab o scripts)
-__pycache__/
-*.pyc
-.venv/
-venv/
-
-# Java/Spring (si lo tienes en otro proyecto)
-target/
-*.iml
-.idea/
-
-# Gradle
-.gradle/
-build/
-
-# permitir scripts SQL del proyecto
-!public/scripts/*.sql
-!public/scripts/**/*.sql

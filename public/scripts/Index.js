@@ -1,110 +1,232 @@
+// public/scripts/index.js
 const API = "/api/questions";
-const API_SUBMIT = "/api/submit";  // Endpoint para enviar las respuestas
+const API_SUBMIT = "/api/submit";
 
-const sendBtn = document.getElementById("sendBtn");  // El botón de "Enviar respuestas"
-const list = document.getElementById("list");  // El contenedor donde se mostrarán las preguntas
-const nextBtn = document.getElementById("nextBtn");  // Botón para pasar a la siguiente página
-const prevBtn = document.getElementById("prevBtn");  // Botón para pasar a la página anterior
+const sendBtn = document.getElementById("sendBtn");
+const list = document.getElementById("list");
+const nextBtn = document.getElementById("nextBtn");
+const prevBtn = document.getElementById("prevBtn");
 
-let currentPage = 1;  // Página inicial
+const STORAGE_KEY = "casm83_answers";           // { [question_no]: value }
+const PAGE_SIZE = 13;
+const TOTAL_ITEMS = 143;                         // CASM-83 R-2014
+const TOTAL_PAGES = Math.ceil(TOTAL_ITEMS / PAGE_SIZE);
+
+let currentPage = Number(localStorage.getItem("casm83_currentPage") || 1);
+
+//---------- gestión de ítems faltantes ----------
+// Devuelve un array con los números de ítems sin responder
+function getMissingQuestions() {
+  const map = getAnswerMap();     // ya lo tienes definido
+  const missing = [];
+  for (let q = 1; q <= TOTAL_ITEMS; q++) {
+    if (map[q] === undefined) missing.push(q);
+  }
+  return missing;
+}
+
+// Muestra un alert con los faltantes
+function showMissingAlert() {
+  const missing = getMissingQuestions();
+  if (missing.length === 0) {
+    alert("🎉 ¡Todo respondido! No hay ítems pendientes.");
+  } else {
+    // Si son muchos, los mostramos separados por comas
+    alert(`❗ Faltan ${missing.length} ítems por responder:\n${missing.join(", ")}`);
+  }
+}
+
+// Listener del botón "Ver faltantes"
+const missingBtn = document.getElementById("missingBtn");
+if (missingBtn) {
+  missingBtn.addEventListener("click", showMissingAlert);
+}
+//----------Fin gestión de ítems faltantes ----------
 
 
-// Función para cargar las preguntas desde la API (paginadas)
+// ---------- helpers de almacenamiento ----------
+function getAnswerMap() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
+}
+function setAnswer(qNo, val) {
+  const map = getAnswerMap();
+  map[qNo] = Number(val);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  updateProgress();
+}
+function updateProgress() {
+  const map = getAnswerMap();
+  // Solo contamos claves 1..TOTAL_ITEMS que realmente existen en el mapa
+  let count = 0;
+  for (let i = 1; i <= TOTAL_ITEMS; i++) {
+    if (map[i] !== undefined) count++;
+  }
+
+  const el = document.getElementById("progress");
+  if (el) el.textContent = `${count}/${TOTAL_ITEMS}`;
+
+  // Reusa la referencia global de sendBtn (ya la tienes arriba)
+  if (sendBtn) sendBtn.disabled = count < TOTAL_ITEMS;
+}
+function getAnswer(qNo) {
+  const map = getAnswerMap();
+  return map[qNo];
+}
+function countAnswered() {
+  return Object.keys(getAnswerMap()).length;
+}
+function allAnswered() {
+  return countAnswered() >= TOTAL_ITEMS;
+}
+function updateSendButtonState() {
+  sendBtn.disabled = !allAnswered();
+}
+
+
+
+// ---------- render de página ----------
 async function load() {
   try {
     const r = await fetch(`${API}?page=${currentPage}`);
     const data = await r.json();
 
-    // Verificar que los datos sean un arreglo y contengan preguntas
     if (!Array.isArray(data) || data.length === 0) {
       list.innerHTML = `<div class="empty">No hay preguntas cargadas aún. Ejecuta el seed y recarga.</div>`;
       return;
     }
 
-    // Mostrar las preguntas en el DOM
-    list.innerHTML = data.map(q => `
-      <div class="q">
-        <h3>Ítem ${q.question_no}</h3>
-        <div class="opt"><strong>A)</strong> ${q.text_a}</div>
-        <div class="opt"><strong>B)</strong> ${q.text_b}</div>
-        <!-- Opciones de respuesta -->
-        <div class="opt">
-          <label><input type="radio" name="question-${q.question_no}" value="1"> Seleccionar A</label>
-          <label><input type="radio" name="question-${q.question_no}" value="2"> Seleccionar B </label>
-          <label><input type="radio" name="question-${q.question_no}" value="3"> Seleccionar Ambos</label>
-          <label><input type="radio" name="question-${q.question_no}" value="0"> Ninguno</label>
+    // Render
+    list.innerHTML = data.map(q => {
+      const saved = getAnswer(q.question_no);
+      return `
+        <div class="q" data-q="${q.question_no}">
+          <h3>Ítem ${q.question_no}</h3>
+          <div class="opt"><strong>A)</strong> ${q.text_a}</div>
+          <div class="opt"><strong>B)</strong> ${q.text_b}</div>
+          <div class="opt radios">
+            <label><input type="radio" name="question-${q.question_no}" value="1" ${saved===1?"checked":""}> A</label>
+            <label><input type="radio" name="question-${q.question_no}" value="2" ${saved===2?"checked":""}> B</label>
+            <label><input type="radio" name="question-${q.question_no}" value="3" ${saved===3?"checked":""}> Ambos</label>
+            <label><input type="radio" name="question-${q.question_no}" value="0" ${saved===0?"checked":""}> Ninguno</label>
+          </div>
         </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
 
-    // Habilitar/deshabilitar los botones de navegación
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage > 10;  // Si hay menos de 13 preguntas, no hay siguiente página
+    // Guardar al cambiar cualquier radio
+    list.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener("change", (e) => {
+        const input = e.target;
+        const wrapper = input.closest(".q");
+        const qNo = Number(wrapper.dataset.q);
+        setAnswer(qNo, input.value);
+        updateSendButtonState();
+      });
+    });
+
+    // Estado de navegación
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= TOTAL_PAGES;
+
+    // Guardar página actual
+    localStorage.setItem("casm83_currentPage", String(currentPage));
+
+    // Actualizar botón enviar según progreso global
+    updateSendButtonState();
+
+    // NUEVO: refresca el contador con lo que ya esté guardado
+    updateProgress();
+
   } catch (e) {
     console.error(e);
     list.innerHTML = `<div class="empty">Error cargando las preguntas.</div>`;
   }
 }
 
-// Función para manejar el clic en "Siguiente"
+// ---------- navegación ----------
+function saveCurrentSelectionsBeforeNav() {
+  // No hace falta: ya guardamos onChange de cada radio.
+  // Esta función queda por si quieres validar algo adicional antes de navegar.
+}
+
 nextBtn.addEventListener("click", () => {
-  currentPage++;  // Incrementar la página actual
-  load();  // Recargar preguntas para la siguiente página
+  saveCurrentSelectionsBeforeNav();
+  if (currentPage < TOTAL_PAGES) {
+    currentPage++;
+    load();
+  }
 });
 
-// Función para manejar el clic en "Anterior"
 prevBtn.addEventListener("click", () => {
-  currentPage--;  // Decrementar la página actual
-  load();  // Recargar preguntas para la página anterior
+  saveCurrentSelectionsBeforeNav();
+  if (currentPage > 1) {
+    currentPage--;
+    load();
+  }
 });
 
-// Llamar a la función load() para cargar las preguntas de la página inicial
-load();
-// Función para manejar el envío de respuestas cuando se hace clic en el botón "Enviar respuestas"
+// ---------- envío ----------
 sendBtn.addEventListener("click", async () => {
-  const questions = document.querySelectorAll(".q");  // Seleccionar todas las preguntas
-  const answers = [];  // Array para almacenar las respuestas
-
-  // Recorrer cada pregunta para generar respuestas automáticas (por ejemplo, todas como "Ninguno" = 0)
-  questions.forEach(q => {
-    const qNo = q.querySelector("h3").textContent.replace("Ítem ", "");  // Obtener el número de la pregunta
-    answers.push(0);  // Asignar 0 ("Ninguno") como respuesta predeterminada
-  });
-
-  // Obtener el respondentId desde localStorage (esto debería haber sido guardado previamente en instrucciones.html)
-  const respondentId = localStorage.getItem("casm83_respondentId");
-
+  const respondentId = Number(localStorage.getItem("casm83_respondentId"));
   if (!respondentId) {
-    alert("❌ No se encontró el ID del participante.");
+    alert("❌ No se encontró el ID del participante. Regrese a instrucciones.");
     return;
   }
 
-  // Crear el payload con los datos para enviar
-  const payload = {
-    respondentId: Number(respondentId),  // Usar el respondentId
-    answers  // Respuestas generadas automáticamente (todas "Ninguno")
-  };
+  // Validar que todas estén respondidas
+  const map = getAnswerMap();
+  const missing = [];
+  for (let q = 1; q <= TOTAL_ITEMS; q++) {
+    if (map[q] === undefined) missing.push(q);
+  }
+  if (missing.length) {
+    const first = missing[0];
+    const targetPage = Math.ceil(first / PAGE_SIZE);
+    alert(`❗ Faltan ${missing.length} ítems por responder. Te llevo al ítem ${first}.`);
+    currentPage = targetPage;
+    await load();
+    // scroll hacia el ítem faltante en la página
+    const el = document.querySelector(`.q[data-q="${first}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  // Construir arreglo en orden 1..143
+  const answers = Array.from({ length: TOTAL_ITEMS }, (_, i) => Number(map[i + 1]));
 
   try {
+    sendBtn.disabled = true;
     const resp = await fetch(API_SUBMIT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)  // Enviar el payload como JSON
+      body: JSON.stringify({ respondentId, answers })
     });
     const data = await resp.json();
+
     if (data.ok) {
       alert("✅ Respuestas enviadas correctamente.");
-      // Limpiar localStorage después de enviar las respuestas
-      localStorage.removeItem("casm83_consent");
-      localStorage.removeItem("casm83_sex");
-      localStorage.removeItem("casm83_grade");
-      localStorage.removeItem("casm83_respondentId");
-      window.location.href = "/instrucciones.html";  // O página de gracias
+    // limpia TODO lo relacionado al alumno y su progreso
+    localStorage.removeItem("casm83_consent");
+    localStorage.removeItem("casm83_sex");
+    localStorage.removeItem("casm83_grade");
+    localStorage.removeItem("casm83_respondentId");
+    localStorage.removeItem("casm83_answers");
+    localStorage.removeItem("casm83_currentPage");
+
+    // regresar a instrucciones y evitar “volver” del navegador
+    location.replace("/instrucciones.html");
+
     } else {
       alert("❌ Error al enviar las respuestas.");
+      sendBtn.disabled = false;
     }
   } catch (e) {
     console.error(e);
-    alert("❌ Error al enviar las respuestas.");
+    alert("❌ Error de red al enviar las respuestas.");
+    sendBtn.disabled = false;
   }
 });
+
+// ---------- init ----------
+load();
